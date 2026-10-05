@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Логистика и Заказы | Диспетчер</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased font-sans">
+
+  <div id="app">
+    <!-- Вход по PIN -->
+    <div v-if="!isAuth" class="min-h-screen flex items-center justify-center p-4">
+      <div class="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full text-center border border-slate-200">
+        <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl font-bold">📦</div>
+        <h2 class="text-xl font-extrabold mb-1">Диспетчерская</h2>
+        <p class="text-xs text-slate-400 mb-6">Введите PIN-код для доступа к заказам</p>
+        <input 
+          v-model="pinInput" 
+          type="password" 
+          placeholder="••••" 
+          maxlength="4"
+          @keyup.enter="checkPin"
+          class="w-full text-center text-3xl tracking-widest border border-slate-300 rounded-2xl py-3 mb-4 focus:outline-slate-900 bg-slate-50">
+        <button @click="checkPin" class="w-full bg-slate-900 hover:bg-black text-white py-3 rounded-2xl font-bold text-sm shadow-lg transition-transform active:scale-95">Войти в панель</button>
+      </div>
+    </div>
+
+    <!-- Основной интерфейс -->
+    <div v-else class="min-h-screen flex flex-col max-w-5xl mx-auto pb-16">
+      
+      <!-- Шапка -->
+      <header class="bg-white border-b px-5 py-3.5 sticky top-0 z-20 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🚛</span>
+          <div>
+            <h1 class="font-extrabold text-base leading-tight">Управление заказами и логистикой</h1>
+            <span class="inline-flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Realtime синхронизация
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button @click="logout" class="text-xs text-slate-400 hover:text-rose-600 font-semibold transition-colors">Выйти</button>
+        </div>
+      </header>
+
+      <!-- Вкладки статусов -->
+      <div class="p-4 flex gap-2 overflow-x-auto no-scrollbar">
+        <button 
+          v-for="tab in logisticsTabs" 
+          :key="tab.status"
+          @click="activeTab = tab.status"
+          :class="activeTab === tab.status ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+          class="px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all">
+          <span>{{ tab.icon }}</span>
+          <span>{{ tab.name }}</span>
+          <span 
+            class="text-[10px] px-2 py-0.5 rounded-full font-extrabold"
+            :class="activeTab === tab.status ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">
+            {{ getCountByStatus(tab.status) }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Лента заказов -->
+      <main class="px-4 space-y-4 flex-1">
+        <div v-if="filteredOrders.length === 0" class="text-center py-20 text-slate-400 text-sm">
+          Заказов на этом этапе сейчас нет
+        </div>
+
+        <div 
+          v-for="order in filteredOrders" 
+          :key="order.id"
+          class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex flex-col justify-between">
+          
+          <div>
+            <div class="flex flex-wrap justify-between items-start border-b pb-3 mb-3 gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-black text-lg text-slate-900">#{{ order.id }}</span>
+                  <span class="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                    ⏱ {{ getTimeAgo(order.created_at) }}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">{{ formatDate(order.created_at) }}</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button @click="printOrder(order)" title="Распечатать лист сборки" class="text-slate-500 hover:text-slate-800 p-1.5 rounded-xl border text-xs flex items-center gap-1 font-semibold bg-slate-50">
+                  🖨 Накладная
+                </button>
+                <span :class="getStatusBadgeClass(order.status)" class="text-xs px-3 py-1 rounded-full font-black tracking-wide uppercase">
+                  {{ getStatusTitle(order.status) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Stepper -->
+            <div class="mb-4 bg-slate-50 p-2.5 rounded-2xl flex items-center justify-between text-[11px] font-bold text-slate-400">
+              <span :class="{'text-emerald-600 font-extrabold': isPassedOrCurrent(order.status, 'new')}">1. Принят</span>
+              <span>➔</span>
+              <span :class="{'text-emerald-600 font-extrabold': isPassedOrCurrent(order.status, 'assembling')}">2. Сборка</span>
+              <span>➔</span>
+              <span :class="{'text-emerald-600 font-extrabold': isPassedOrCurrent(order.status, 'ready')}">3. Собран</span>
+              <span>➔</span>
+              <span :class="{'text-emerald-600 font-extrabold': isPassedOrCurrent(order.status, 'delivering')}">4. В пути</span>
+              <span>➔</span>
+              <span :class="{'text-emerald-600 font-extrabold': isPassedOrCurrent(order.status, 'completed')}">5. Вручен</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+              <div>
+                <p class="text-slate-400 font-medium">Получатель:</p>
+                <p class="font-bold text-slate-800 text-sm">{{ order.customer_name }}</p>
+                <p class="mt-1">
+                  <a :href="'tel:' + order.customer_phone" class="text-indigo-600 font-bold hover:underline inline-flex items-center gap-1">
+                    📞 {{ order.customer_phone }}
+                  </a>
+                </p>
+              </div>
+              <div>
+                <p class="text-slate-400 font-medium">Адрес доставки / Примечание:</p>
+                <p class="font-semibold text-slate-800">{{ order.customer_address || 'Самовывоз / Не указан' }}</p>
+              </div>
+            </div>
+
+            <!-- Блок курьера -->
+            <div v-if="order.courier" class="mb-3 bg-purple-50 border border-purple-100 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🚚</span>
+                <div>
+                  <p class="font-extrabold text-purple-950 text-sm">{{ order.courier.name }}</p>
+                  <p class="text-[11px] text-purple-700 font-medium">{{ order.courier.transport_type }} • {{ order.courier.vehicle_plate || 'Без номера' }}</p>
+                  <p class="text-xs font-mono font-bold text-purple-900 mt-0.5 select-all">📞 {{ order.courier.phone }}</p>
+                </div>
+              </div>
+              <a :href="'tel:' + order.courier.phone" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow-sm transition-transform active:scale-95">
+                Позвонить
+              </a>
+            </div>
+
+            <!-- Состав заказа -->
+            <div class="bg-slate-50 rounded-2xl p-3.5 mb-4 text-xs divide-y divide-slate-200">
+              <div v-for="(it, idx) in order.items" :key="idx" class="py-2 flex justify-between items-center">
+                <div>
+                  <span class="font-bold text-slate-900 text-sm">{{ it.name }}</span>
+                  <span v-if="it.article" class="text-[10px] text-slate-400 block">арт: {{ it.article }}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-base font-black text-slate-900">{{ it.qty }} шт.</span>
+                  <span class="text-slate-400 block text-[11px]">{{ it.subtotal }} ₽</span>
+                </div>
+              </div>
+              <div class="pt-2.5 flex justify-between items-center font-black text-base text-slate-900">
+                <span>Итоговая сумма:</span>
+                <span class="text-emerald-600">{{ order.total_amount }} ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t">
+            <button 
+              v-if="getNextAction(order)"
+              @click="handleActionClick(order)"
+              :class="getNextAction(order).btnClass"
+              class="flex-1 py-3 rounded-2xl font-bold text-xs shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+              <span>{{ getNextAction(order).icon }}</span>
+              <span>{{ getNextAction(order).label }}</span>
+            </button>
+
+            <button 
+              v-if="order.status !== 'cancelled' && order.status !== 'completed'" 
+              @click="cancelOrder(order.id)"
+              class="px-4 py-3 bg-rose-50 text-rose-600 font-bold text-xs rounded-2xl hover:bg-rose-100 transition-colors">
+              Отменить
+            </button>
+          </div>
+
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Модальное окно выбора курьера -->
+    <div v-if="courierModalOpen" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
+        <h3 class="text-base font-extrabold mb-1">Назначить курьера на доставку</h3>
+        <p class="text-xs text-slate-400 mb-4">Заказ #{{ selectedOrderForCourier?.id }} готов к отправке</p>
+
+        <div class="space-y-2 mb-5">
+          <label class="block text-xs font-semibold text-slate-700">Выберите водителя на смене:</label>
+          <div v-if="couriers.length === 0" class="text-xs text-amber-600 bg-amber-50 p-3 rounded-xl">
+            Нет активных курьеров. Добавьте их в таблицу «Курьеры».
+          </div>
+          <div v-else class="space-y-1.5 max-h-48 overflow-y-auto">
+            <div 
+              v-for="c in couriers" 
+              :key="c.id"
+              @click="chosenCourierId = c.id"
+              :class="chosenCourierId === c.id ? 'border-purple-600 bg-purple-50/50 ring-2 ring-purple-600/20' : 'border-slate-200 hover:bg-slate-50'"
+              class="border rounded-2xl p-3 cursor-pointer flex items-center justify-between transition-all text-xs">
+              <div>
+                <p class="font-bold text-slate-900">{{ c.name }}</p>
+                <p class="text-[11px] text-slate-500">{{ c.transport_type }} • {{ c.vehicle_plate || 'Пеший' }}</p>
+                <p class="text-[11px] font-mono text-slate-600">{{ c.phone }}</p>
+              </div>
+              <span v-if="chosenCourierId === c.id" class="text-purple-600 font-bold text-base">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button @click="courierModalOpen = false" class="flex-1 bg-slate-100 text-slate-700 font-bold py-2.5 rounded-xl text-xs">Отмена</button>
+          <button 
+            @click="assignCourierAndDispatch" 
+            :disabled="!chosenCourierId"
+            class="flex-1 bg-purple-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-xs shadow-md">
+            Отправить в путь ➔
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Печатный бланк -->
+    <div id="printable-order" v-if="orderToPrint" class="p-8 font-mono text-black leading-relaxed">
+      <div class="border-b-2 border-black pb-3 mb-4 flex justify-between items-end">
+        <div>
+          <h1 class="text-2xl font-bold">НАКЛАДНАЯ СБОРКИ И ДОСТАВКИ #{{ orderToPrint.id }}</h1>
+          <p class="text-xs mt-1">Оформлен: {{ formatDate(orderToPrint.created_at) }}</p>
+        </div>
+        <div class="text-right">
+          <span class="text-xs border-2 border-black px-2 py-1 font-bold uppercase">
+            {{ getStatusTitle(orderToPrint.status) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4 text-xs">
+        <div>
+          <p><strong>Заказчик:</strong> {{ orderToPrint.customer_name }}</p>
+          <p><strong>Телефон:</strong> {{ orderToPrint.customer_phone }}</p>
+          <p><strong>Адрес/Заметка:</strong> {{ orderToPrint.customer_address || 'Самовывоз' }}</p>
+        </div>
+        <div class="border-l pl-4">
+          <p><strong>Экспедитор / Водитель:</strong></p>
+          <p class="font-bold" v-if="orderToPrint.courier">
+            {{ orderToPrint.courier.name }} ({{ orderToPrint.courier.transport_type }} {{ orderToPrint.courier.vehicle_plate || '' }})
+          </p>
+          <p v-if="orderToPrint.courier">Тел. водителя: {{ orderToPrint.courier.phone }}</p>
+          <p v-else class="italic text-gray-500">Не назначен</p>
+        </div>
+      </div>
+
+      <table class="w-full text-left border-collapse mb-4 text-xs">
+        <thead>
+          <tr class="border-b-2 border-black">
+            <th class="py-2">Арт.</th>
+            <th class="py-2">Наименование</th>
+            <th class="py-2 text-right">Количество</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(it, i) in orderToPrint.items" :key="i" class="border-b">
+            <td class="py-2">{{ it.article || '-' }}</td>
+            <td class="py-2 font-bold">{{ it.name }}</td>
+            <td class="py-2 text-right font-bold text-sm">[  ] {{ it.qty }} шт.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="border-t-2 border-black pt-3 flex justify-between items-center text-sm">
+        <div>
+          <p class="text-xs">Сборщик склада: _______________ (подпись)</p>
+          <p class="text-xs mt-1">Принял водитель: _______________ (подпись)</p>
+        </div>
+        <p class="text-lg font-bold">Сумма заказа: {{ orderToPrint.total_amount }} руб.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Подключение конфигурации и логики -->
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
