@@ -3,161 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Онлайн-заказ</title>
+  <title>Вкусный день | Прием заказов</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-gray-50 text-gray-800 pb-28 select-none">
+<body class="bg-[#121214] text-white min-h-screen pb-28 select-none antialiased">
 
   <div id="app">
-    <!-- Шапка -->
-    <header class="sticky top-0 z-20 bg-white border-b px-4 py-3 shadow-sm flex items-center justify-between">
+    <!-- Шапка каталога с иллюстрацией -->
+    <header class="p-5 flex items-center justify-between">
       <div>
-        <h1 class="font-bold text-lg leading-tight">Прием заказов</h1>
-        <p class="text-xs text-gray-500">Оптовые и розничные заявки</p>
+        <h1 class="text-2xl font-black leading-tight tracking-tight">Вкусный<br>день</h1>
       </div>
-      <span class="text-xs bg-green-100 text-green-700 font-medium px-2.5 py-1 rounded-full">Прием открыт</span>
+      <!-- Иконка/иллюстрация снеков справа -->
+      <div class="w-20 h-16 flex items-center justify-center text-4xl">
+        🥨🧀🥜
+      </div>
     </header>
 
-    <!-- Фильтр категорий -->
-    <div class="sticky top-[57px] z-10 bg-white/95 backdrop-blur px-4 py-2 border-b flex gap-2 overflow-x-auto no-scrollbar">
+    <!-- Горизонтальные категории -->
+    <nav class="px-5 pb-3 flex gap-6 overflow-x-auto no-scrollbar border-b border-zinc-800/60 text-sm">
       <button 
         v-for="cat in categories" 
         :key="cat"
         @click="selectedCategory = cat"
-        :class="selectedCategory === cat ? 'bg-black text-white shadow-sm' : 'bg-gray-100 text-gray-700'"
-        class="px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">
+        :class="selectedCategory === cat ? 'text-white font-bold border-b-2 border-white pb-2' : 'text-zinc-500 hover:text-zinc-300 pb-2'"
+        class="whitespace-nowrap transition-colors">
         {{ cat }}
       </button>
-    </div>
+    </nav>
 
-    <!-- Загрузка -->
-    <div v-if="loading" class="text-center py-20 text-gray-400 text-sm">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent text-gray-400 rounded-full mb-2"></div>
+    <!-- Лоадер -->
+    <div v-if="loading" class="text-center py-24 text-zinc-500 text-sm">
+      <div class="animate-spin inline-block w-6 h-6 border-2 border-zinc-500 border-t-white rounded-full mb-3"></div>
       <p>Загрузка каталога...</p>
     </div>
 
-    <!-- Каталог товаров -->
-    <main v-else class="p-4 grid grid-cols-2 gap-3">
+    <!-- Сетка товаров (2 колонки) -->
+    <main v-else class="p-4 grid grid-cols-2 gap-3.5">
       <div 
         v-for="item in filteredProducts" 
         :key="item.id" 
-        class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between">
+        class="bg-[#1c1c20] rounded-2xl p-3 border border-zinc-800/80 flex flex-col justify-between">
         
         <div>
-          <div class="relative w-full h-32 bg-gray-100">
-            <img :src="item.image_url || 'https://via.placeholder.com/300'" :alt="item.name" class="w-full h-full object-cover">
+          <!-- Фото товара -->
+          <div class="w-full h-32 rounded-xl overflow-hidden bg-zinc-800/50 mb-3 relative">
+            <img 
+              :src="item.image_url || 'https://via.placeholder.com/300'" 
+              :alt="item.name" 
+              class="w-full h-full object-cover">
           </div>
-          <div class="p-2.5">
-            <h3 class="font-semibold text-sm line-clamp-1 leading-snug">{{ item.name }}</h3>
-            <p class="text-xs text-gray-400 line-clamp-2 mt-1 leading-tight">{{ item.description }}</p>
-          </div>
+
+          <!-- Название и граммовка/описание -->
+          <h3 class="font-bold text-sm text-zinc-100 leading-snug line-clamp-2 mb-1">{{ item.name }}</h3>
+          <p class="text-[11px] text-zinc-500 line-clamp-1 mb-2">{{ item.description || '50г' }}</p>
         </div>
 
-        <div class="p-2.5 pt-0">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-bold text-sm">{{ item.price }} ₽</span>
-            <span class="text-[10px] text-green-600 font-medium">● Доступно</span>
+        <!-- Цена и счетчик -->
+        <div>
+          <div class="font-black text-sm text-white mb-2.5">
+            {{ item.price }} ₽
           </div>
 
-          <div>
+          <!-- Блок счетчика: [-] [qty] [+] -->
+          <div class="flex items-center justify-between bg-[#2a2a30] rounded-xl px-2 py-1.5 border border-zinc-700/50">
             <button 
-              v-if="!cart[item.id]" 
-              @click="addToCart(item)"
-              class="w-full py-2 bg-gray-900 active:bg-gray-700 text-white rounded-lg text-xs font-semibold">
-              В корзину
+              @click="removeFromCart(item.id)" 
+              class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 font-bold text-base">
+              –
             </button>
-            <div v-else class="flex items-center justify-between bg-gray-100 rounded-lg p-1 border">
-              <button @click="removeFromCart(item.id)" class="w-7 h-7 bg-white rounded shadow-sm text-sm font-bold flex items-center justify-center active:scale-95">-</button>
-              <input 
-                type="number" 
-                min="1" 
-                v-model.number="cart[item.id].qty"
-                @change="validateQuantity(item)"
-                class="w-12 text-center bg-transparent text-xs font-bold focus:outline-none">
-              <button @click="addToCart(item)" class="w-7 h-7 bg-white rounded shadow-sm text-sm font-bold flex items-center justify-center active:scale-95">+</button>
-            </div>
+            
+            <input 
+              type="number" 
+              min="0"
+              :value="cart[item.id] ? cart[item.id].qty : 0"
+              @change="onManualInput(item, $event)"
+              class="w-10 text-center bg-transparent text-xs font-bold text-white focus:outline-none">
+
+            <button 
+              @click="addToCart(item)" 
+              class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 font-bold text-base">
+              +
+            </button>
           </div>
         </div>
 
       </div>
     </main>
 
-    <!-- Нижняя плашка Корзины -->
-    <div v-if="cartTotalCount > 0" class="fixed bottom-4 left-4 right-4 z-30">
-      <button 
-        @click="showCheckout = true"
-        class="w-full bg-black text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform">
-        <div class="flex items-center gap-2">
-          <span class="bg-white/20 text-xs px-2.5 py-1 rounded-full font-bold">{{ cartTotalCount }}</span>
-          <span class="text-sm">Оформить заявку</span>
-        </div>
-        <span class="text-sm font-bold">{{ cartTotalPrice }} ₽</span>
-      </button>
-    </div>
-
-    <!-- Модальное окно оформления -->
-    <div v-if="showCheckout" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4 border-b pb-3">
-          <h2 class="font-bold text-base">Оформление заявки</h2>
-          <button @click="showCheckout = false" class="text-gray-400 text-2xl font-bold leading-none">&times;</button>
+    <!-- Нижняя плавающая плашка «К оформлению» -->
+    <div 
+      v-if="cartTotalCount > 0" 
+      class="fixed bottom-5 left-4 right-4 z-30">
+      <div class="bg-[#242429] border border-zinc-700/60 p-3 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-md">
+        <div class="pl-2">
+          <p class="text-[11px] text-zinc-400 leading-tight">Итого:</p>
+          <p class="text-base font-black text-white leading-tight">{{ cartTotalPrice }} ₽</p>
         </div>
 
-        <div class="divide-y text-xs mb-4 max-h-48 overflow-y-auto pr-1">
-          <div v-for="c in Object.values(cart)" :key="c.item.id" class="py-2 flex justify-between items-center">
-            <div>
-              <p class="font-medium text-gray-800">{{ c.item.name }}</p>
-              <p class="text-gray-400">{{ c.qty }} шт. × {{ c.item.price }} ₽</p>
-            </div>
-            <span class="font-bold text-sm">{{ c.item.price * c.qty }} ₽</span>
-          </div>
-        </div>
-
-        <div class="border-t pt-3 mb-4 flex justify-between font-bold text-base">
-          <span>Сумма заявки:</span>
-          <span>{{ cartTotalPrice }} ₽</span>
-        </div>
-
-        <form @submit.prevent="submitOrder" class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Имя или название компании *</label>
-            <input v-model="orderForm.name" required type="text" placeholder="ООО 'Вектор' / Иван" class="w-full border rounded-xl p-2.5 text-sm focus:outline-black">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Номер телефона *</label>
-            <input v-model="orderForm.phone" required type="tel" placeholder="+7 999 000-00-00" class="w-full border rounded-xl p-2.5 text-sm focus:outline-black">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Адрес доставки или примечание</label>
-            <textarea v-model="orderForm.comment" rows="2" placeholder="Склад №2 или доставка к 09:00..." class="w-full border rounded-xl p-2.5 text-sm focus:outline-black"></textarea>
-          </div>
-
-          <button 
-            type="submit" 
-            :disabled="submitting"
-            class="w-full mt-4 bg-black text-white p-3.5 rounded-xl font-bold text-sm active:bg-gray-800 disabled:opacity-50 transition-opacity">
-            {{ submitting ? 'Отправка заявки...' : 'Отправить заказ' }}
-          </button>
-        </form>
+        <button 
+          @click="showCheckout = true"
+          class="bg-[#3b3b44] hover:bg-[#484852] active:scale-95 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 transition-all">
+          <span>🛒</span>
+          <span>К оформлению</span>
+        </button>
       </div>
     </div>
 
-    <!-- Модалка успеха -->
-    <div v-if="orderSuccess" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 text-center max-w-xs w-full shadow-2xl">
-        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">✓</div>
-        <h3 class="font-bold text-base mb-1">Заказ принят!</h3>
-        <p class="text-xs text-gray-500 mb-4">Номер вашей заявки: #{{ lastOrderId }}. Оператор получил уведомление и собирает заказ.</p>
-        <button @click="orderSuccess = false" class="w-full bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold">Готово</button>
+    <!-- Экран оформления заказа (в темном стиле) -->
+    <div 
+      v-if="showCheckout" 
+      class="fixed inset-0 z-50 bg-[#121214] flex flex-col justify-between overflow-y-auto">
+      
+      <div class="p-5 max-w-md mx-auto w-full">
+        <!-- Шапка окна оформления -->
+        <div class="flex items-center justify-between mb-6 pb-3 border-b border-zinc-800">
+          <button @click="showCheckout = false" class="text-zinc-400 hover:text-white font-bold text-sm flex items-center gap-1">
+            ← Назад
+          </button>
+          <h2 class="text-base font-bold text-white">Оформление заказа</h2>
+          <div class="w-10"></div>
+        </div>
+
+        <!-- Состав корзины с кнопками +/- на этапе оформления -->
+        <div class="space-y-3 mb-6">
+          <div 
+            v-for="c in Object.values(cart)" 
+            :key="c.item.id" 
+            class="flex items-center justify-between bg-[#1c1c20] p-3 rounded-2xl border border-zinc-800/80">
+            
+            <div class="flex items-center gap-3">
+              <img 
+                :src="c.item.image_url || 'https://via.placeholder.com/150'" 
+                class="w-12 h-12 rounded-xl object-cover bg-zinc-800">
+              <div>
+                <p class="font-bold text-xs text-zinc-100 leading-snug max-w-[150px] line-clamp-1">{{ c.item.name }}</p>
+                <p class="text-[11px] text-zinc-500 mt-0.5">{{ c.item.price }} ₽ / шт.</p>
+              </div>
+            </div>
+
+            <!-- Сумма и кнопки +/- прямо в корзине -->
+            <div class="flex flex-col items-end gap-1.5">
+              <span class="font-bold text-xs text-white">{{ c.item.price * c.qty }} ₽</span>
+              
+              <div class="flex items-center bg-[#2a2a30] rounded-lg px-1.5 py-0.5 border border-zinc-700/60">
+                <button @click="removeFromCart(c.item.id)" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-white font-bold text-xs">–</button>
+                <span class="w-6 text-center text-xs font-bold text-white">{{ c.qty }}</span>
+                <button @click="addToCart(c.item)" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-white font-bold text-xs">+</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="pt-2 flex justify-between items-center text-sm font-bold text-zinc-300">
+            <span>Общая сумма:</span>
+            <span class="text-lg font-black text-white">{{ cartTotalPrice }} ₽</span>
+          </div>
+        </div>
+
+        <!-- Данные покупателя (B2B) -->
+        <div class="mb-6">
+          <h3 class="text-sm font-extrabold text-white mb-3">Данные покупателя</h3>
+          
+          <form @submit.prevent="submitOrder" id="order-form" class="space-y-3.5 text-xs">
+            <div>
+              <label class="block text-zinc-400 mb-1">Название магазина *</label>
+              <input 
+                v-model="orderForm.shopName" 
+                required 
+                type="text" 
+                placeholder='Магазин "У Дома"' 
+                class="w-full bg-[#1c1c20] border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+            </div>
+
+            <div>
+              <label class="block text-zinc-400 mb-1">Адрес доставки *</label>
+              <input 
+                v-model="orderForm.address" 
+                required 
+                type="text" 
+                placeholder="ул. Ленина, д. 10" 
+                class="w-full bg-[#1c1c20] border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+            </div>
+
+            <div>
+              <label class="block text-zinc-400 mb-1">Телефон *</label>
+              <input 
+                v-model="orderForm.phone" 
+                required 
+                type="tel" 
+                placeholder="+7 (900) 123-45-67" 
+                class="w-full bg-[#1c1c20] border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+            </div>
+
+            <div>
+              <label class="block text-zinc-400 mb-1">ИНН (для B2B) *</label>
+              <input 
+                v-model="orderForm.inn" 
+                required 
+                type="text" 
+                placeholder="7701234567" 
+                class="w-full bg-[#1c1c20] border border-zinc-800 rounded-xl p-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+            </div>
+          </form>
+        </div>
+
+        <!-- Кнопка подтверждения -->
+        <button 
+          type="submit" 
+          form="order-form"
+          :disabled="submitting || cartTotalCount === 0"
+          class="w-full bg-[#3b3b44] hover:bg-[#484852] disabled:opacity-40 text-white font-extrabold py-3.5 rounded-xl text-sm transition-all active:scale-[0.98] shadow-lg mb-8">
+          {{ submitting ? 'Отправка заявки...' : 'Подтвердить заказ' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Модалка успешного заказа -->
+    <div v-if="orderSuccess" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-[#1c1c20] border border-zinc-800 rounded-3xl p-6 text-center max-w-xs w-full shadow-2xl">
+        <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold">✓</div>
+        <h3 class="font-extrabold text-base text-white mb-1">Заказ принят!</h3>
+        <p class="text-xs text-zinc-400 mb-5">Заявка #{{ lastOrderId }} успешно создана. Диспетчер уже передал её на склад.</p>
+        <button @click="orderSuccess = false" class="w-full bg-[#3b3b44] text-white py-2.5 rounded-xl text-xs font-bold">Отлично</button>
       </div>
     </div>
 
   </div>
 
-  <!-- Подключение конфигурации и логики -->
   <script src="js/config.js"></script>
   <script src="js/client.js"></script>
 </body>

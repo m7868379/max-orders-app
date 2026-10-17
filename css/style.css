@@ -1,8 +1,8 @@
-/* Прячем полосу прокрутки у категорий */
+/* Убираем скроллбар в категориях */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Убираем стрелочки у числового инпута */
+/* Убираем стрелочки у полей ввода чисел */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
@@ -12,12 +12,12 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* На экране накладная ВСЕГДА скрыта */
+/* Скрываем накладную на экране */
 @media screen {
   #printable-order { display: none !important; }
 }
 
-/* Видна ТОЛЬКО при отправке на принтер */
+/* Видимость при печати */
 @media print {
   body * { visibility: hidden; }
   #printable-order, #printable-order * { visibility: visible; }
