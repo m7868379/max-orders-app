@@ -18,7 +18,7 @@ createApp({
       inn: ''
     });
 
-    // Загрузка активных товаров
+    // Загрузка активных товаров из Supabase
     const fetchProducts = async () => {
       loading.value = true;
       const { data, error } = await clientDb
@@ -33,23 +33,29 @@ createApp({
       loading.value = false;
     };
 
+    // Динамические категории из базы данных (с пунктом "Все")
     const categories = computed(() => {
-      const list = ["Все", "Сухари", "Мясо", "Сыры", "Гренки", "Орехи", "Рыба"];
+      const list = ["Все"];
       products.value.forEach(p => {
-        if (p.category && !list.includes(p.category)) list.push(p.category);
+        if (p.category && !list.includes(p.category)) {
+          list.push(p.category);
+        }
       });
       return list;
     });
 
+    // Фильтрация каталога
     const filteredProducts = computed(() => {
       if (selectedCategory.value === "Все") return products.value;
       return products.value.filter(p => p.category === selectedCategory.value);
     });
 
+    // Получение текущего количества товара в корзине
     const getItemQty = (itemId) => {
       return cart.value[itemId]?.qty || 0;
     };
 
+    // Добавление в корзину
     const addToCart = (item) => {
       if (!cart.value[item.id]) {
         cart.value[item.id] = { item, qty: 1 };
@@ -58,24 +64,16 @@ createApp({
       }
     };
 
+    // Уменьшение количества / удаление из корзины
     const removeFromCart = (itemId) => {
       if (cart.value[itemId]) {
         cart.value[itemId].qty--;
         if (cart.value[itemId].qty <= 0) {
           delete cart.value[itemId];
-        }
-      }
-    };
-
-    const setItemQty = (item, qty) => {
-      const val = parseInt(qty, 10);
-      if (isNaN(val) || val <= 0) {
-        delete cart.value[item.id];
-      } else {
-        if (!cart.value[item.id]) {
-          cart.value[item.id] = { item, qty: val };
-        } else {
-          cart.value[item.id].qty = val;
+          // Если корзина полностью опустела на экране оформления — возвращаем в каталог
+          if (Object.keys(cart.value).length === 0) {
+            showCheckout.value = false;
+          }
         }
       }
     };
@@ -107,6 +105,7 @@ createApp({
       showCheckout.value = false;
     };
 
+    // Отправка заказа в таблицу orders нашей базы данных
     const submitOrder = async () => {
       if (cartTotalCount.value === 0) return;
       submitting.value = true;
@@ -120,14 +119,11 @@ createApp({
         subtotal: c.item.price * c.qty
       }));
 
-      // Безопасная вставка без .select() чтобы не нарушать RLS
       const { error } = await clientDb.from('orders').insert([
         {
-          customer_name: orderForm.value.storeName || 'Магазин B2B',
+          customer_name: `${orderForm.value.storeName} (ИНН: ${orderForm.value.inn || 'Не указан'})`,
           customer_phone: orderForm.value.phone,
           customer_address: orderForm.value.address,
-          store_name: orderForm.value.storeName || 'Магазин B2B',
-          inn: orderForm.value.inn || '',
           comment: `ИНН: ${orderForm.value.inn || 'Не указан'}`,
           items: orderItems,
           total_amount: cartTotalPrice.value,
@@ -138,7 +134,7 @@ createApp({
       submitting.value = false;
 
       if (error) {
-        alert('Ошибка оформления: ' + error.message);
+        alert('Ошибка при оформлении заявки: ' + error.message);
       } else {
         lastOrderId.value = Math.floor(1000 + Math.random() * 9000);
         orderSuccess.value = true;
@@ -161,7 +157,6 @@ createApp({
       getItemQty,
       addToCart,
       removeFromCart,
-      setItemQty,
       cartTotalCount,
       cartTotalPrice,
       showCheckout,

@@ -3,311 +3,289 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MAX Orders App — Вкусный день | Заказ снеков</title>
-  <meta name="description" content="Оптовый и розничный онлайн-заказ снеков: сухари, вяленое мясо, сыры, гренки, орехи. Быстрая доставка и B2B кабинет.">
-  <meta property="og:title" content="Вкусный день — Заказ снеков B2B & B2C">
-  <meta property="og:description" content="Сухари, вяленое мясо, сырные снеки, гренки, орехи. Автоматизация заказов и логистики.">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
+  <title>Вкусный день | Прием заказов</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    /* Плавные переходы и акцентные цвета */
-    .accent-orange { color: #FF6B35; }
-    .bg-accent-orange { background-color: #FF6B35; }
-    .bg-accent-orange:hover { background-color: #E85D26; }
-    .border-accent-orange { border-color: #FF6B35; }
-    .active-input-glow {
-      border-color: #FF6B35 !important;
-      box-shadow: 0 0 0 1px #FF6B35;
-    }
-  </style>
 </head>
-<body class="bg-[#0e0e11] text-gray-100 antialiased selection:bg-[#FF6B35] selection:text-white">
+<body class="bg-[#0e0e11] text-gray-100 antialiased selection:bg-[#FF6B35] selection:text-white pb-28">
 
-  <div id="app" class="min-h-screen bg-[#0e0e11] flex justify-center">
-    
-    <!-- Мобильный контейнер (Phone Mockup frame on desktop, 100% on mobile) -->
-    <div class="w-full max-w-[430px] min-h-screen bg-[#141417] relative flex flex-col shadow-2xl border-x border-white/5 pb-24">
+  <div id="app" class="min-h-screen flex flex-col justify-between max-w-4xl mx-auto w-full">
 
-      <!-- ============================================== -->
-      <!-- ЭКРАН 1: ВИТРИНА КАТАЛОГА (ЛЕВЫЙ ТЕЛЕФОН)     -->
-      <!-- ============================================== -->
-      <div v-if="!showCheckout" class="flex-1 flex flex-col">
+    <!-- ============================================== -->
+    <!-- ЭКРАН 1: ВИТРИНА КАТАЛОГА                     -->
+    <!-- ============================================== -->
+    <div v-if="!showCheckout" class="flex-1 flex flex-col">
 
-        <!-- Баннер «Вкусный день» -->
-        <div class="px-4 pt-4 pb-1">
-          <div class="bg-[#202024] rounded-3xl p-5 border border-white/5 relative overflow-hidden flex items-center justify-between shadow-lg">
-            <!-- Левая колонка баннера -->
-            <div class="z-10 max-w-[58%]">
-              <h2 class="text-xl font-extrabold text-white leading-tight tracking-tight">Вкусный день</h2>
-              <p class="text-[11px] text-gray-300 mt-1 leading-snug line-clamp-2">
-                Специальные оптовые и розничные цены на снеки
-              </p>
-              <button 
-                @click="scrollToCatalog"
-                class="mt-3 bg-[#FF6B35] hover:bg-[#E85D26] active:scale-95 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-md shadow-orange-950/40 transition-transform">
-                Посмотреть
-              </button>
-            </div>
+      <!-- Баннер «Вкусный день» -->
+      <div class="px-4 pt-4 pb-2">
+        <div class="bg-[#202024] rounded-3xl p-5 border border-white/5 relative overflow-hidden flex items-center justify-between shadow-xl">
+          <div class="z-10 max-w-[65%]">
+            <h1 class="text-2xl font-black text-white leading-tight tracking-tight">Вкусный день</h1>
+            <p class="text-xs text-gray-300 mt-1 leading-snug">
+              Оптовые и розничные поставки снеков
+            </p>
+            <button 
+              @click="scrollToCatalog"
+              class="mt-3.5 bg-[#FF6B35] hover:bg-[#E85D26] active:scale-95 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-md btn-orange-glow transition-all">
+              В каталог
+            </button>
+          </div>
 
-            <!-- Правая колонка с блюдом снеков -->
-            <div class="relative w-28 h-28 flex-shrink-0 flex items-center justify-center">
-              <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/20 to-orange-500/30 blur-sm"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=300&q=80" 
-                alt="Вкусный день снеки" 
-                class="w-24 h-24 rounded-full object-cover shadow-xl border-2 border-amber-500/30 rotate-6 transform hover:rotate-12 transition-transform duration-300">
+          <!-- Иконка/иллюстрация справа -->
+          <div class="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/20 to-orange-500/30 blur-md"></div>
+            <div class="text-5xl sm:text-6xl transform rotate-6 hover:rotate-12 transition-transform select-none">
+              🥨🧀🥜
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Горизонтальные категории (Pill Filter) -->
-        <div class="sticky top-0 z-20 bg-[#141417]/95 backdrop-blur-md px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar border-b border-white/5">
-          <button 
-            v-for="cat in categories" 
-            :key="cat"
-            @click="selectedCategory = cat"
-            :class="selectedCategory === cat 
-              ? 'bg-[#FF6B35] text-white shadow-md shadow-orange-950/40 font-semibold' 
-              : 'bg-[#202024] text-gray-400 hover:text-white font-medium border border-white/5'"
-            class="px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all active:scale-95">
-            {{ cat }}
-          </button>
-        </div>
+      <!-- Фильтр по категориям -->
+      <div class="sticky top-0 z-20 bg-[#0e0e11]/95 backdrop-blur-md px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar border-b border-white/5">
+        <button 
+          v-for="cat in categories" 
+          :key="cat"
+          @click="selectedCategory = cat"
+          :class="selectedCategory === cat 
+            ? 'bg-[#FF6B35] text-white shadow-md font-bold' 
+            : 'bg-[#202024] text-gray-400 hover:text-white font-medium border border-white/5'"
+          class="px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all active:scale-95">
+          {{ cat }}
+        </button>
+      </div>
 
-        <!-- Лоадер -->
-        <div v-if="loading" class="text-center py-20 text-gray-500 text-sm">
-          <div class="animate-spin inline-block w-7 h-7 border-2 border-orange-500 border-t-transparent rounded-full mb-3"></div>
-          <p>Загрузка снеков...</p>
-        </div>
+      <!-- Лоадер -->
+      <div v-if="loading" class="text-center py-24 text-gray-500 text-sm">
+        <div class="animate-spin inline-block w-7 h-7 border-2 border-[#FF6B35] border-t-transparent rounded-full mb-3"></div>
+        <p>Загрузка каталога...</p>
+      </div>
 
-        <!-- Контейнер каталога: Сетка 2 в ширину -->
-        <div v-else id="catalog-section" class="p-4 flex-1">
-          <div class="grid grid-cols-2 gap-3">
-            <div 
-              v-for="item in filteredProducts" 
-              :key="item.id"
-              class="bg-[#202024] rounded-2xl p-3 border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors shadow-sm">
+      <!-- Сетка товаров (адаптивная: 2 колонки на телефоне, 3-4 на планшете/ПК) -->
+      <div v-else id="catalog-section" class="p-4 flex-1">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+          <div 
+            v-for="item in filteredProducts" 
+            :key="item.id"
+            class="bg-[#202024] rounded-2xl p-3 border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors shadow-sm">
+            
+            <div>
+              <!-- Фото товара -->
+              <div class="w-full h-32 sm:h-36 rounded-xl overflow-hidden bg-black/40 mb-2.5">
+                <img 
+                  :src="item.image_url || 'https://via.placeholder.com/300'" 
+                  :alt="item.name" 
+                  class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
+              </div>
               
-              <div>
-                <!-- Изображение -->
-                <div class="w-full h-32 rounded-xl overflow-hidden bg-black/40 mb-2.5">
-                  <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
-                </div>
-                <!-- Заголовок и вес -->
-                <h3 class="font-bold text-sm text-white line-clamp-1 leading-snug">{{ item.name }}</h3>
-                <p class="text-xs text-gray-400 mt-0.5">{{ item.weight || '100 г' }}</p>
-              </div>
-
-              <!-- Нижняя часть: Цена и Степпер -->
-              <div class="mt-3 flex items-center justify-between">
-                <span class="font-extrabold text-sm text-white">{{ item.price }} ₽</span>
-                
-                <!-- Степпер -->
-                <div class="bg-[#2B2B30] rounded-xl p-1 flex items-center gap-1.5 border border-white/5">
-                  <button 
-                    @click="removeFromCart(item.id)"
-                    class="w-6 h-6 rounded-lg bg-[#202024] hover:bg-black/50 active:scale-90 text-gray-300 text-sm font-bold flex items-center justify-center transition-transform">
-                    −
-                  </button>
-                  <span class="text-xs font-bold text-white min-w-[16px] text-center">
-                    {{ getItemQty(item.id) }}
-                  </span>
-                  <button 
-                    @click="addToCart(item)"
-                    class="w-6 h-6 rounded-lg bg-[#FF6B35] hover:bg-[#E85D26] active:scale-90 text-white text-sm font-bold flex items-center justify-center shadow-sm transition-transform">
-                    +
-                  </button>
-                </div>
-              </div>
-
+              <!-- Название и описание -->
+              <h3 class="font-bold text-sm text-white line-clamp-2 leading-snug mb-1">{{ item.name }}</h3>
+              <p class="text-[11px] text-gray-400 line-clamp-1 mb-2">{{ item.description || 'В наличии' }}</p>
             </div>
-          </div>
 
-          <!-- Небольшая ссылка на диспетчерскую внизу каталога -->
-          <div class="pt-6 pb-2 text-center">
-            <a href="admin.html" class="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">
-              Панель диспетчера (PIN: 7788)
-            </a>
+            <!-- Цена и степпер -->
+            <div class="mt-2 flex items-center justify-between gap-1">
+              <span class="font-black text-sm sm:text-base text-white whitespace-nowrap">{{ item.price }} ₽</span>
+              
+              <div class="bg-[#2B2B30] rounded-xl p-1 flex items-center gap-1.5 border border-white/5">
+                <button 
+                  @click="removeFromCart(item.id)"
+                  class="w-6 h-6 rounded-lg bg-[#202024] hover:bg-black/50 active:scale-90 text-gray-300 text-sm font-bold flex items-center justify-center transition-transform">
+                  −
+                </button>
+                <span class="text-xs font-bold text-white min-w-[18px] text-center">
+                  {{ getItemQty(item.id) }}
+                </span>
+                <button 
+                  @click="addToCart(item)"
+                  class="w-6 h-6 rounded-lg bg-[#FF6B35] hover:bg-[#E85D26] active:scale-90 text-white text-sm font-bold flex items-center justify-center shadow-sm transition-transform">
+                  +
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Нижняя плашка с итогом и кнопкой оформления -->
-        <div class="sticky bottom-0 z-30 bg-[#141417]/95 backdrop-blur-md border-t border-white/10 p-4 flex items-center justify-between shadow-2xl">
+        <!-- Ссылка на диспетчерскую внизу -->
+        <div class="pt-8 pb-3 text-center">
+          <a href="admin.html" class="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+            Панель диспетчера (PIN: 7788) →
+          </a>
+        </div>
+      </div>
+
+      <!-- Плавающая нижняя панель корзины -->
+      <div 
+        v-if="cartTotalCount > 0" 
+        class="fixed bottom-4 left-0 right-0 z-30 px-4 flex justify-center">
+        <div class="bg-[#202024]/95 backdrop-blur-md border border-white/10 p-3.5 rounded-2xl shadow-2xl flex items-center justify-between max-w-4xl w-full">
           <div>
-            <span class="text-base font-extrabold text-white">
+            <span class="text-base font-black text-white">
               Итого: {{ cartTotalPrice }} ₽
             </span>
-            <p v-if="cartTotalCount > 0" class="text-[11px] text-gray-400">
+            <p class="text-[11px] text-gray-400">
               Выбрано: {{ cartTotalCount }} шт.
             </p>
           </div>
 
           <button 
             @click="openCheckout"
-            :disabled="cartTotalCount === 0"
-            :class="cartTotalCount > 0 
-              ? 'bg-[#FF6B35] hover:bg-[#E85D26] text-white active:scale-95 shadow-lg shadow-orange-950/40 cursor-pointer' 
-              : 'bg-[#28282d] text-gray-500 cursor-not-allowed opacity-60'"
-            class="px-6 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2">
-            <span>Оформить заказ</span>
-            <span v-if="cartTotalCount > 0" class="bg-black/20 text-xs px-2 py-0.5 rounded-full">
+            class="bg-[#FF6B35] hover:bg-[#E85D26] text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-lg btn-orange-glow active:scale-95 transition-all flex items-center gap-2">
+            <span>🛒 Оформить заказ</span>
+            <span class="bg-black/25 text-xs px-2 py-0.5 rounded-full font-extrabold">
               {{ cartTotalCount }}
             </span>
           </button>
         </div>
-
-      </div>
-
-      <!-- ============================================== -->
-      <!-- ЭКРАН 2: ОФОРМЛЕНИЕ ЗАКАЗА (ПРАВЫЙ ТЕЛЕФОН)    -->
-      <!-- ============================================== -->
-      <div v-else class="flex-1 flex flex-col p-4 animate-fadeIn">
-        
-        <!-- Шапка экрана оформления с кнопкой назад -->
-        <div class="flex items-center gap-3 mb-5">
-          <button 
-            @click="closeCheckout"
-            class="w-9 h-9 rounded-xl bg-[#202024] hover:bg-[#28282d] text-white flex items-center justify-center text-lg active:scale-90 transition-transform border border-white/5">
-            ←
-          </button>
-          <h2 class="text-lg font-extrabold text-white">Оформление заказа</h2>
-        </div>
-
-        <!-- Блок состава заказа (Корзина товаров) -->
-        <div class="bg-[#202024] rounded-2xl p-4 border border-white/5 mb-5 space-y-3.5 shadow-sm">
-          <div 
-            v-for="c in cartItemsList" 
-            :key="c.item.id"
-            class="flex items-center justify-between gap-3 pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
-            
-            <div class="flex items-center gap-3 min-w-0">
-              <img :src="c.item.image_url" :alt="c.item.name" class="w-13 h-13 w-[52px] h-[52px] rounded-xl object-cover bg-black/40 flex-shrink-0">
-              <div class="min-w-0">
-                <p class="font-bold text-sm text-white truncate">{{ c.item.name }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">x {{ c.qty }} - {{ c.item.price * c.qty }} ₽</p>
-              </div>
-            </div>
-
-            <!-- Степпер прямо в заказе -->
-            <div class="bg-[#2B2B30] rounded-xl p-1 flex items-center gap-1.5 border border-white/5 flex-shrink-0">
-              <button 
-                @click="removeFromCart(c.item.id)"
-                class="w-6 h-6 rounded-lg bg-[#202024] hover:bg-black/50 active:scale-90 text-gray-300 text-sm font-bold flex items-center justify-center">
-                −
-              </button>
-              <span class="text-xs font-bold text-white min-w-[16px] text-center">
-                {{ c.qty }}
-              </span>
-              <button 
-                @click="addToCart(c.item)"
-                class="w-6 h-6 rounded-lg bg-[#FF6B35] hover:bg-[#E85D26] active:scale-90 text-white text-sm font-bold flex items-center justify-center">
-                +
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Итоговая сумма в блоке -->
-          <div class="pt-2 border-t border-white/10 flex justify-between items-center text-sm">
-            <span class="text-gray-400">Сумма заказа:</span>
-            <span class="font-extrabold text-white text-base">{{ cartTotalPrice }} ₽</span>
-          </div>
-        </div>
-
-        <!-- Форма B2B / Розничного заказа -->
-        <form @submit.prevent="submitOrder" class="space-y-4 flex-1 flex flex-col justify-between">
-          
-          <div class="space-y-3.5">
-            <div>
-              <label class="block text-xs font-medium text-gray-300 mb-1.5">Название магазина</label>
-              <input 
-                v-model="orderForm.storeName"
-                required
-                type="text" 
-                placeholder="ООО 'Балтика' / Магазин 'Хмельной'" 
-                class="w-full bg-[#1A1A1D] border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FF6B35] transition-colors">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-300 mb-1.5">Адрес доставки</label>
-              <input 
-                v-model="orderForm.address"
-                required
-                type="text" 
-                placeholder="г. Москва, ул. Ленина, д. 12" 
-                class="w-full bg-[#1A1A1D] border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FF6B35] transition-colors">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-300 mb-1.5">Номер телефона</label>
-              <input 
-                v-model="orderForm.phone"
-                required
-                type="tel" 
-                placeholder="+7 (999) 000-00-00" 
-                class="w-full bg-[#1A1A1D] border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FF6B35] transition-colors">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-300 mb-1.5">ИНН (B2B)*</label>
-              <input 
-                v-model="orderForm.inn"
-                type="text" 
-                placeholder="7701234567" 
-                class="w-full bg-[#1A1A1D] border border-[#FF6B35]/80 active-input-glow rounded-2xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors">
-            </div>
-          </div>
-
-          <!-- Кнопка подтверждения заказа -->
-          <div class="pt-6">
-            <button 
-              type="submit"
-              :disabled="submitting || cartTotalCount === 0"
-              class="w-full bg-[#FF6B35] hover:bg-[#E85D26] active:scale-[0.98] disabled:opacity-50 text-white font-extrabold text-sm py-4 rounded-2xl shadow-xl shadow-orange-950/50 transition-all flex items-center justify-center gap-2">
-              <span v-if="submitting" class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
-              <span>{{ submitting ? 'Отправка заявки...' : 'Подтвердить заказ' }}</span>
-            </button>
-          </div>
-
-        </form>
-
       </div>
 
     </div>
 
-    <!-- Модальное окно подтверждения успеха заказа -->
+    <!-- ============================================== -->
+    <!-- ЭКРАН 2: ОФОРМЛЕНИЕ ЗАКАЗА                    -->
+    <!-- ============================================== -->
+    <div v-else class="flex-1 flex flex-col p-4 sm:p-6 animate-fadeIn">
+      
+      <!-- Шапка экрана оформления -->
+      <div class="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
+        <button 
+          @click="closeCheckout"
+          class="w-9 h-9 rounded-xl bg-[#202024] hover:bg-[#28282d] text-white flex items-center justify-center text-lg active:scale-90 transition-transform border border-white/5">
+          ←
+        </button>
+        <h2 class="text-lg font-black text-white">Оформление заказа</h2>
+      </div>
+
+      <!-- Состав корзины с кнопками +/- на этапе оформления -->
+      <div class="bg-[#202024] rounded-2xl p-4 border border-white/5 mb-6 space-y-3 shadow-sm">
+        <div 
+          v-for="c in cartItemsList" 
+          :key="c.item.id"
+          class="flex items-center justify-between gap-3 pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
+          
+          <div class="flex items-center gap-3 min-w-0">
+            <img 
+              :src="c.item.image_url || 'https://via.placeholder.com/150'" 
+              :alt="c.item.name" 
+              class="w-12 h-12 rounded-xl object-cover bg-black/40 flex-shrink-0">
+            <div class="min-w-0">
+              <p class="font-bold text-xs sm:text-sm text-white truncate">{{ c.item.name }}</p>
+              <p class="text-[11px] text-gray-400 mt-0.5">{{ c.qty }} шт. × {{ c.item.price }} ₽ = {{ c.item.price * c.qty }} ₽</p>
+            </div>
+          </div>
+
+          <!-- Степпер прямо в заказе -->
+          <div class="bg-[#2B2B30] rounded-xl p-1 flex items-center gap-1.5 border border-white/5 flex-shrink-0">
+            <button 
+              @click="removeFromCart(c.item.id)"
+              class="w-6 h-6 rounded-lg bg-[#202024] hover:bg-black/50 active:scale-90 text-gray-300 text-sm font-bold flex items-center justify-center">
+              −
+            </button>
+            <span class="text-xs font-bold text-white min-w-[18px] text-center">
+              {{ c.qty }}
+            </span>
+            <button 
+              @click="addToCart(c.item)"
+              class="w-6 h-6 rounded-lg bg-[#FF6B35] hover:bg-[#E85D26] active:scale-90 text-white text-sm font-bold flex items-center justify-center">
+              +
+            </button>
+          </div>
+
+        </div>
+
+        <div class="pt-3 border-t border-white/10 flex justify-between items-center text-sm">
+          <span class="text-gray-400 font-medium">Сумма к оплате:</span>
+          <span class="font-black text-white text-base sm:text-lg">{{ cartTotalPrice }} ₽</span>
+        </div>
+      </div>
+
+      <!-- Форма покупателя (B2B) -->
+      <form @submit.prevent="submitOrder" class="space-y-4 flex-1 flex flex-col justify-between">
+        
+        <div class="space-y-3.5">
+          <h3 class="text-sm font-extrabold text-white">Данные покупателя</h3>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1.5">Название магазина / компании *</label>
+            <input 
+              v-model="orderForm.storeName"
+              required
+              type="text" 
+              placeholder='Магазин "У Дома" / ИП Иванов' 
+              class="w-full bg-[#1A1A1D] border border-white/10 input-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1.5">Адрес доставки *</label>
+            <input 
+              v-model="orderForm.address"
+              required
+              type="text" 
+              placeholder="г. Москва, ул. Ленина, д. 12" 
+              class="w-full bg-[#1A1A1D] border border-white/10 input-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1.5">Номер телефона *</label>
+            <input 
+              v-model="orderForm.phone"
+              required
+              type="tel" 
+              placeholder="+7 (999) 000-00-00" 
+              class="w-full bg-[#1A1A1D] border border-white/10 input-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1.5">ИНН (для B2B) *</label>
+            <input 
+              v-model="orderForm.inn"
+              required
+              type="text" 
+              placeholder="7701234567" 
+              class="w-full bg-[#1A1A1D] border border-white/10 input-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors">
+          </div>
+        </div>
+
+        <div class="pt-6 pb-4">
+          <button 
+            type="submit"
+            :disabled="submitting || cartTotalCount === 0"
+            class="w-full bg-[#FF6B35] hover:bg-[#E85D26] active:scale-[0.98] disabled:opacity-50 text-white font-extrabold text-sm py-4 rounded-xl shadow-xl btn-orange-glow transition-all flex items-center justify-center gap-2">
+            <span v-if="submitting" class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+            <span>{{ submitting ? 'Отправка заявки...' : 'Подтвердить заказ' }}</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <!-- Модалка успешного заказа -->
     <div v-if="orderSuccess" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="bg-[#202024] rounded-3xl p-6 text-center max-w-xs w-full shadow-2xl border border-white/10 animate-scaleUp">
+      <div class="bg-[#202024] rounded-3xl p-6 text-center max-w-xs w-full shadow-2xl border border-white/10">
         <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
           ✓
         </div>
         <h3 class="font-extrabold text-lg text-white mb-1.5">Заказ оформлен!</h3>
-        <p class="text-xs text-gray-400 mb-4 leading-relaxed">
+        <p class="text-xs text-gray-400 mb-5 leading-relaxed">
           Номер вашей заявки: <strong class="text-white">#{{ lastOrderId }}</strong>.<br>
-          Диспетчер получил заявку и отправляет на комплектацию.
+          Диспетчер получил заказ и уже передал его на склад.
         </p>
         <div class="space-y-2">
           <button 
             @click="orderSuccess = false" 
-            class="w-full bg-[#FF6B35] hover:bg-[#E85D26] text-white py-3 rounded-2xl text-xs font-bold transition-colors">
+            class="w-full bg-[#FF6B35] hover:bg-[#E85D26] text-white py-3 rounded-xl text-xs font-bold transition-colors">
             Вернуться в каталог
           </button>
-          <a 
-            href="admin.html" 
-            class="block w-full bg-[#2B2B30] hover:bg-[#34343a] text-gray-300 py-2.5 rounded-2xl text-xs font-semibold transition-colors">
-            Перейти в диспетчерскую (7788) →
-          </a>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Подключение конфигурации и клиентской логики -->
   <script src="js/config.js"></script>
   <script src="js/client.js"></script>
 </body>

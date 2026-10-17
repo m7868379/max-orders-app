@@ -1,20 +1,18 @@
-/* Стили для темы Вкусный День / MAX Snacks */
 :root {
   --color-accent: #FF6B35;
   --color-accent-hover: #E85D26;
-  --color-bg-dark: #121215;
+  --color-bg-dark: #0e0e11;
   --color-card-dark: #202024;
-  --color-card-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
-  background-color: #0d0d0f;
+  background-color: #0e0e11;
   color: #f3f4f6;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Прячем полосу прокрутки у горизонтальных категорий */
+/* Прячем полосу прокрутки у категорий */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -28,15 +26,12 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Эффект свечения для акцентных кнопок */
+/* Свечение для акцентных кнопок */
 .btn-orange-glow {
-  box-shadow: 0 4px 18px rgba(255, 107, 53, 0.35);
-}
-.btn-orange-glow:active {
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.35);
 }
 
-/* Кастомный фокус для полей ввода */
+/* Фокус на полях ввода */
 .input-dark:focus {
   border-color: #FF6B35 !important;
   box-shadow: 0 0 0 1px #FF6B35;
@@ -47,7 +42,7 @@ input[type=number] {
   #printable-order { display: none !important; }
 }
 
-/* Видна ТОЛЬКО при отправке на принтер */
+/* Видимость при печати */
 @media print {
   body * { visibility: hidden; }
   #printable-order, #printable-order * { visibility: visible; }
