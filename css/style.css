@@ -1,8 +1,24 @@
-/* Убираем скроллбар в категориях */
+/* Стили для темы Вкусный День / MAX Snacks */
+:root {
+  --color-accent: #FF6B35;
+  --color-accent-hover: #E85D26;
+  --color-bg-dark: #121215;
+  --color-card-dark: #202024;
+  --color-card-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  background-color: #0d0d0f;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Прячем полосу прокрутки у горизонтальных категорий */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Убираем стрелочки у полей ввода чисел */
+/* Убираем стрелочки у числового инпута */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
@@ -12,12 +28,26 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Скрываем накладную на экране */
+/* Эффект свечения для акцентных кнопок */
+.btn-orange-glow {
+  box-shadow: 0 4px 18px rgba(255, 107, 53, 0.35);
+}
+.btn-orange-glow:active {
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
+}
+
+/* Кастомный фокус для полей ввода */
+.input-dark:focus {
+  border-color: #FF6B35 !important;
+  box-shadow: 0 0 0 1px #FF6B35;
+}
+
+/* На экране накладная ВСЕГДА скрыта */
 @media screen {
   #printable-order { display: none !important; }
 }
 
-/* Видимость при печати */
+/* Видна ТОЛЬКО при отправке на принтер */
 @media print {
   body * { visibility: hidden; }
   #printable-order, #printable-order * { visibility: visible; }
@@ -27,5 +57,7 @@ input[type=number] {
     top: 0; 
     width: 100%; 
     display: block !important; 
+    background: #fff;
+    color: #000;
   }
 }

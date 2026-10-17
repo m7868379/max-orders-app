@@ -4,21 +4,21 @@ createApp({
   setup() {
     const products = ref([]);
     const loading = ref(true);
-    const selectedCategory = ref("Сухари");
+    const selectedCategory = ref("Все");
     const cart = ref({});
     const showCheckout = ref(false);
     const submitting = ref(false);
     const orderSuccess = ref(false);
     const lastOrderId = ref(null);
 
-    // Новые B2B поля из макета
     const orderForm = ref({
-      shopName: '',
+      storeName: '',
       address: '',
       phone: '',
       inn: ''
     });
 
+    // Загрузка активных товаров
     const fetchProducts = async () => {
       loading.value = true;
       const { data, error } = await clientDb
@@ -29,27 +29,27 @@ createApp({
 
       if (!error && data) {
         products.value = data;
-        // Если выбранной категории нет, ставим первую доступную
-        if (data.length > 0 && !categories.value.includes(selectedCategory.value)) {
-          selectedCategory.value = categories.value[0];
-        }
       }
       loading.value = false;
     };
 
     const categories = computed(() => {
-      const list = [];
+      const list = ["Все", "Сухари", "Мясо", "Сыры", "Гренки", "Орехи", "Рыба"];
       products.value.forEach(p => {
         if (p.category && !list.includes(p.category)) list.push(p.category);
       });
-      return list.length ? list : ["Сухари", "Мясо", "Сыры", "Гренки", "Орехи"];
+      return list;
     });
 
     const filteredProducts = computed(() => {
+      if (selectedCategory.value === "Все") return products.value;
       return products.value.filter(p => p.category === selectedCategory.value);
     });
 
-    // Добавление / увеличение
+    const getItemQty = (itemId) => {
+      return cart.value[itemId]?.qty || 0;
+    };
+
     const addToCart = (item) => {
       if (!cart.value[item.id]) {
         cart.value[item.id] = { item, qty: 1 };
@@ -58,54 +58,77 @@ createApp({
       }
     };
 
-    // Уменьшение / удаление
     const removeFromCart = (itemId) => {
       if (cart.value[itemId]) {
         cart.value[itemId].qty--;
         if (cart.value[itemId].qty <= 0) {
           delete cart.value[itemId];
-          // Если корзина опустела в окне оформления, возвращаем на витрину
-          if (Object.keys(cart.value).length === 0) {
-            showCheckout.value = false;
-          }
         }
       }
     };
 
-    // Ручной ввод количества в карточке товара
-    const onManualInput = (item, event) => {
-      const val = parseInt(event.target.value, 10);
+    const setItemQty = (item, qty) => {
+      const val = parseInt(qty, 10);
       if (isNaN(val) || val <= 0) {
         delete cart.value[item.id];
       } else {
-        cart.value[item.id] = { item, qty: val };
+        if (!cart.value[item.id]) {
+          cart.value[item.id] = { item, qty: val };
+        } else {
+          cart.value[item.id].qty = val;
+        }
       }
     };
 
-    const cartTotalCount = computed(() => Object.values(cart.value).reduce((sum, c) => sum + c.qty, 0));
-    const cartTotalPrice = computed(() => Object.values(cart.value).reduce((sum, c) => sum + (c.item.price * c.qty), 0));
+    const cartTotalCount = computed(() => {
+      return Object.values(cart.value).reduce((sum, c) => sum + c.qty, 0);
+    });
 
-    // Отправка B2B-заказа в Supabase
+    const cartTotalPrice = computed(() => {
+      return Object.values(cart.value).reduce((sum, c) => sum + (c.item.price * c.qty), 0);
+    });
+
+    const cartItemsList = computed(() => {
+      return Object.values(cart.value);
+    });
+
+    const scrollToCatalog = () => {
+      const el = document.getElementById('catalog-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const openCheckout = () => {
+      if (cartTotalCount.value === 0) return;
+      showCheckout.value = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const closeCheckout = () => {
+      showCheckout.value = false;
+    };
+
     const submitOrder = async () => {
       if (cartTotalCount.value === 0) return;
       submitting.value = true;
 
       const orderItems = Object.values(cart.value).map(c => ({
         product_id: c.item.id,
-        article: c.item.article,
+        article: c.item.article || '',
         name: c.item.name,
         price: c.item.price,
         qty: c.qty,
         subtotal: c.item.price * c.qty
       }));
 
-      // Сохраняем имя магазина и ИНН в customer_name, а адрес в customer_address
+      // Безопасная вставка без .select() чтобы не нарушать RLS
       const { error } = await clientDb.from('orders').insert([
         {
-          customer_name: `${orderForm.value.shopName} (ИНН: ${orderForm.value.inn})`,
+          customer_name: orderForm.value.storeName || 'Магазин B2B',
           customer_phone: orderForm.value.phone,
           customer_address: orderForm.value.address,
-          comment: `ИНН: ${orderForm.value.inn}`,
+          store_name: orderForm.value.storeName || 'Магазин B2B',
+          inn: orderForm.value.inn || '',
+          comment: `ИНН: ${orderForm.value.inn || 'Не указан'}`,
           items: orderItems,
           total_amount: cartTotalPrice.value,
           status: 'new'
@@ -115,23 +138,41 @@ createApp({
       submitting.value = false;
 
       if (error) {
-        alert('Ошибка при оформлении заявки: ' + error.message);
+        alert('Ошибка оформления: ' + error.message);
       } else {
         lastOrderId.value = Math.floor(1000 + Math.random() * 9000);
         orderSuccess.value = true;
         showCheckout.value = false;
         cart.value = {};
-        orderForm.value = { shopName: '', address: '', phone: '', inn: '' };
+        orderForm.value = { storeName: '', address: '', phone: '', inn: '' };
       }
     };
 
     onMounted(fetchProducts);
 
     return {
-      products, loading, categories, selectedCategory, filteredProducts,
-      cart, addToCart, removeFromCart, onManualInput, cartTotalCount,
-      cartTotalPrice, showCheckout, orderForm, submitting, submitOrder,
-      orderSuccess, lastOrderId
+      products,
+      loading,
+      categories,
+      selectedCategory,
+      filteredProducts,
+      cart,
+      cartItemsList,
+      getItemQty,
+      addToCart,
+      removeFromCart,
+      setItemQty,
+      cartTotalCount,
+      cartTotalPrice,
+      showCheckout,
+      openCheckout,
+      closeCheckout,
+      orderForm,
+      submitting,
+      submitOrder,
+      orderSuccess,
+      lastOrderId,
+      scrollToCatalog
     };
   }
 }).mount('#app');
